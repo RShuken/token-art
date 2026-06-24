@@ -42,7 +42,7 @@ Self-contained **Node.js + vanilla HTML/Canvas** app in `Token Art/`. No build s
 - **`engine/titles.js`** — generates a title and museum-plaque text from a piece's stats.
 - **`watch/hook.js`** — Claude Code Stop hook. Reads `transcript_path`, sums `message.usage` token counts since last checkpoint, extracts style signals (avg message length, code-block density, tool-call count, question/exclamation ratio, warmth). Every *N* tokens, appends a "piece ready" event to the pending queue.
 - **`server.js`** — tiny local HTTP server. Serves `gallery/`, watches the queue, exposes endpoints: poll pending, submit selection, get gallery, post/export+deploy, simulate session, read/write driver.
-- **`gallery/`** — front end (HTML + Canvas): live gallery grid (masonry), right-side alert, candidate-picker modal, lightbox, driver editor, progress counter (`N/120`), Post button.
+- **`gallery/`** — front end (HTML + Canvas): live gallery grid (masonry), right-side alert, candidate-picker modal, lightbox, driver editor, progress counter (toward a 150-piece target), Post button.
 - **`build-collection.js`** — generates the ~140-piece permanent collection from random simulated sessions, writes `gallery.json`, exports the static site, and deploys to GitHub Pages.
 
 ### State (JSON files under `state/`)
@@ -79,7 +79,7 @@ Each gallery piece stores *why* it looks the way it does (its stats), surfaced o
 
 ## Demo flow (tonight)
 1. Show the **live GitHub Pages gallery** — ~140 pieces, museum-style.
-2. Switch to localhost demo app — counter, driver shown.
+2. Switch to localhost demo app — counter (toward 150), driver shown.
 3. Talk to Claude (or **Simulate session**) → tokens climb → **"New painting ready"** alert.
 4. Click → 5 candidates → pick → animates into gallery.
 5. Edit `driver.md` ("warm, bold, geometric") → next pieces visibly shift.
