@@ -1,0 +1,12 @@
+{
+  "name": "token-art",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "build": "node build-collection.js",
+    "serve": "node server.js",
+    "deploy": "node scripts/deploy.js"
+  }
+}
