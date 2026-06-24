@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Art — Collection</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="titlewall">
+  <h1>Token Art</h1>
+  <p>A generative collection — each piece born from a session of tokens.</p>
+  <div class="counter" id="counter">—</div>
+</div>
+<div class="masonry" id="masonry"></div>
+<div class="lightbox" id="lightbox">
+  <span class="lb-close" id="lbClose">&times;</span>
+  <div class="lb-inner">
+    <canvas id="lbCanvas"></canvas>
+    <h2 id="lbTitle"></h2>
+    <div class="pl" id="lbPlaque"></div>
+  </div>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
