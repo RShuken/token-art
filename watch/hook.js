@@ -1,10 +1,11 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addPending } from '../engine/state.js';
+import { APP_ROOT, STATE_DIR } from '../engine/paths.js';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const STATE = join(ROOT, 'state');
+const ROOT = APP_ROOT;
+const STATE = STATE_DIR;
 const THRESHOLD = Number(process.env.TOKEN_ART_THRESHOLD || 15000);
 
 function textOf(content) {

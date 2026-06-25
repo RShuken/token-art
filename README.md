@@ -5,7 +5,25 @@ shown as a live-growing, museum-style gallery and published to GitHub Pages.
 
 **Live collection:** https://rshuken.github.io/token-art/
 
-## Quick start
+## Install as a Claude Code plugin
+
+Your community installs it in two commands — the Stop hook auto-registers, no
+manual `settings.json` editing:
+
+```
+/plugin marketplace add RShuken/token-art
+/plugin install token-art@token-art
+```
+
+Then, in any session, run **`/token-art`** to open the gallery at
+http://localhost:4800. As you work, your real token usage paints new pieces
+(every ~15k tokens a "new painting ready" alert appears). State lives in a shared
+`~/.token-art/` directory so the hook and the gallery always agree.
+
+> Requires Node.js on the user's machine. The gallery viewer is a local server
+> (`/token-art` starts it). Publishing to GitHub Pages is optional and repo-specific.
+
+## Quick start (local checkout)
 
 ```bash
 node build-collection.js 140   # pre-generate the permanent collection

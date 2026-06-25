@@ -1,0 +1,20 @@
+{
+  "name": "token-art",
+  "owner": {
+    "name": "Ryan Shuken",
+    "url": "https://github.com/RShuken"
+  },
+  "metadata": {
+    "description": "Token Art — generative art made from how you use Claude Code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "token-art",
+      "source": ".",
+      "description": "Turn token usage + conversation style into procedural art, with a live local gallery and a /token-art command to open it.",
+      "version": "1.0.0",
+      "author": { "name": "Ryan Shuken" }
+    }
+  ]
+}

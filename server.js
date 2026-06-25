@@ -4,9 +4,10 @@ import { join, extname, normalize, sep } from 'node:path';
 import { addPending, listPending, selectCandidate, loadGallery } from './engine/state.js';
 import { simulateSession } from './engine/simulate.js';
 import { mulberry32 } from './engine/rng.js';
+import { APP_ROOT, STATE_DIR } from './engine/paths.js';
 
-const ROOT = process.cwd();
-const STATE = join(ROOT, 'state');
+const ROOT = APP_ROOT;
+const STATE = STATE_DIR;
 const PORT = process.env.PORT || 4800;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
 

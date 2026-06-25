@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "TOKEN_ART_HOME=\"$HOME/.token-art\" node \"${CLAUDE_PLUGIN_ROOT}/watch/hook.js\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
