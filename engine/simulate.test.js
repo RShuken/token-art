@@ -12,6 +12,17 @@ test('simulateSession produces a full stats object', () => {
   assert.ok(s.tokens > 0 && s.prompts > 0);
 });
 
+test('a collection shows varied session characters (not all code-heavy)', () => {
+  const { pieces } = buildCollection({ count: 140, driverText: 'random', seed: 7 });
+  const characters = new Set(pieces.map(p => p.plaque.match(/· ([a-z-]+ session) ·/)[1]));
+  assert.ok(characters.size >= 4, `expected >=4 distinct session characters, got ${[...characters].join(', ')}`);
+  // no single character should dominate the whole collection
+  const counts = {};
+  for (const p of pieces) { const c = p.plaque.match(/· ([a-z-]+ session) ·/)[1]; counts[c] = (counts[c] || 0) + 1; }
+  const max = Math.max(...Object.values(counts));
+  assert.ok(max < pieces.length * 0.5, `one character dominates: ${JSON.stringify(counts)}`);
+});
+
 test('buildCollection yields requested count of valid records', () => {
   const { pieces } = buildCollection({ count: 140, driverText: 'random', seed: 99 });
   assert.equal(pieces.length, 140);
