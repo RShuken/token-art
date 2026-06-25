@@ -22,5 +22,31 @@
   </div>
 </div>
 <script type="module" src="app.js"></script>
+<div class="toolbar" id="toolbar">
+  <button id="simBtn">＋ Simulate session</button>
+  <button id="driverBtn">✎ Driver</button>
+  <button id="postBtn">⤴ Post</button>
+</div>
+<div class="alert" id="alert">
+  <div class="alert-dot"></div>
+  <div><b>New painting ready</b><div class="alert-sub" id="alertSub">Tap to choose</div></div>
+</div>
+<div class="picker" id="picker">
+  <div class="picker-inner">
+    <h2>Choose the piece for this session</h2>
+    <p class="pl" id="pickerPlaque"></p>
+    <div class="candidates" id="candidates"></div>
+  </div>
+  <span class="lb-close" id="pickerClose">&times;</span>
+</div>
+<div class="drawer" id="driverDrawer">
+  <h3>Creative direction (driver.md)</h3>
+  <textarea id="driverText" spellcheck="false"></textarea>
+  <div class="drawer-row">
+    <button id="driverRandom">Set to random</button>
+    <button id="driverSave">Save</button>
+  </div>
+</div>
+<script type="module" src="live.js"></script>
 </body>
 </html>
