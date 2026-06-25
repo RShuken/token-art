@@ -9,23 +9,22 @@ const ORGANIC = ['Flow Field', 'Watercolor', 'Rivers', 'Sediment'];
 
 export function parseDriver(text) {
   const out = { mode: 'directed', styles: [], palettes: [], moods: [], size: 'random' };
-  const body = String(text || '').toLowerCase();
-  // strip markdown comment/heading lines but keep their content for keyword scan
-  const lines = String(text || '').split('\n');
+  // strip HTML comment blocks so commented-out example directives aren't parsed as live
+  const cleaned = String(text || '').replace(/<!--[\s\S]*?-->/g, '');
+  const lines = cleaned.split('\n');
   let sawDirective = false;
   const list = (v) => v.split(',').map(s => s.trim()).filter(Boolean);
   for (const line of lines) {
-    const m = line.match(/^\s*(styles?|palettes?|mood s?|moods?|size)\s*:\s*(.+)$/i);
+    const m = line.match(/^\s*(styles?|palettes?|moods?|size)\s*:\s*(.+)$/i);
     if (!m) continue;
     sawDirective = true;
-    const key = m[1].toLowerCase().replace(/s$/, '').replace(/\s/g, '');
+    const key = m[1].toLowerCase().replace(/s$/, '');
     const val = m[2].trim();
     if (key === 'style') out.styles = list(val);
     else if (key === 'palette') out.palettes = list(val);
     else if (key === 'mood') out.moods = list(val).map(s => s.toLowerCase());
     else if (key === 'size') out.size = /large/.test(val) ? 'large' : /small/.test(val) ? 'small' : 'random';
   }
-  if (!sawDirective || /\brandom\b/.test(body) && !sawDirective) out.mode = 'random';
   if (!sawDirective) out.mode = 'random';
   return out;
 }

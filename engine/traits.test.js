@@ -12,6 +12,14 @@ test('parseDriver detects random', () => {
   assert.equal(parseDriver('# anything\n\nrandom\n').mode, 'random');
 });
 
+test('parseDriver ignores commented-out example directives', () => {
+  const shipped = '# header\n\nrandom\n\n<!--\nstyles: Bauhaus, Mondrian\npalettes: Neon Synth\n-->\n';
+  const d = parseDriver(shipped);
+  assert.equal(d.mode, 'random');
+  assert.deepEqual(d.styles, []);
+  assert.deepEqual(d.palettes, []);
+});
+
 test('parseDriver reads directives', () => {
   const d = parseDriver('styles: Bauhaus, Mondrian\npalettes: Neon Synth\nmood: warm\nsize: large');
   assert.equal(d.mode, 'directed');
