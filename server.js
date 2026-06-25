@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile, readFileSync, existsSync, writeFileSync } from 'node:fs';
-import { join, extname, normalize } from 'node:path';
+import { join, extname, normalize, sep } from 'node:path';
 import { addPending, listPending, selectCandidate, loadGallery } from './engine/state.js';
 import { simulateSession } from './engine/simulate.js';
 import { mulberry32 } from './engine/rng.js';
@@ -25,7 +25,7 @@ const server = createServer(async (req, res) => {
   try {
     if (p === '/api/gallery') return send(res, 200, loadGallery(STATE));
     if (p === '/api/pending') return send(res, 200, listPending(STATE));
-    if (p === '/api/driver') return send(res, 200, { text: driverText() });
+    if (p === '/api/driver' && req.method === 'GET') return send(res, 200, { text: driverText() });
     if (p === '/gallery.json') return send(res, 200, loadGallery(STATE));
 
     if (req.method === 'POST') {
@@ -49,7 +49,7 @@ const server = createServer(async (req, res) => {
     let file = p === '/' ? '/gallery/index.html' : p;
     if (file.startsWith('/engine/')) file = file; else if (!file.startsWith('/gallery/')) file = '/gallery' + file;
     const abs = normalize(join(ROOT, file));
-    if (!abs.startsWith(ROOT)) return send(res, 403, 'forbidden', 'text/plain');
+    if (abs !== ROOT && !abs.startsWith(ROOT + sep)) return send(res, 403, 'forbidden', 'text/plain');
     readFile(abs, (err, data) => {
       if (err) return send(res, 404, 'not found', 'text/plain');
       send(res, 200, data, MIME[extname(abs)] || 'application/octet-stream');

@@ -27,9 +27,10 @@ export function listPending(dir) { return loadPending(dir); }
 export function addPending(dir, stats, driverText) {
   const driver = parseDriver(driverText || 'random');
   const candidates = makeCandidates(stats, driver, 5);
-  const pendingId = `p${stats.tokens}_${loadPending(dir).length}_${Math.floor(stats.prompts)}`;
+  const list = loadPending(dir);
+  const pendingId = `p${stats.tokens}_${list.length}_${Math.floor(stats.prompts)}`;
   const entry = { pendingId, candidates };
-  const list = loadPending(dir); list.push(entry); savePending(dir, list);
+  list.push(entry); savePending(dir, list);
   return entry;
 }
 
