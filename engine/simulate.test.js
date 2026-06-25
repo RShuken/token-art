@@ -1,0 +1,43 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { simulateSession, buildCollection } from './simulate.js';
+import { mulberry32 } from './rng.js';
+import { STYLE_NAMES } from './catalog.js';
+import { PALETTE_NAMES } from './palettes.js';
+
+test('simulateSession produces a full stats object', () => {
+  const s = simulateSession(mulberry32(1));
+  for (const k of ['tokens', 'prompts', 'codeBlocks', 'toolCalls', 'exclamations', 'questions', 'avgMsgLen'])
+    assert.equal(typeof s[k], 'number', `missing ${k}`);
+  assert.ok(s.tokens > 0 && s.prompts > 0);
+});
+
+test('a collection shows varied session characters (not all code-heavy)', () => {
+  const { pieces } = buildCollection({ count: 140, driverText: 'random', seed: 7 });
+  const characters = new Set(pieces.map(p => p.plaque.match(/· ([a-z-]+ session) ·/)[1]));
+  assert.ok(characters.size >= 4, `expected >=4 distinct session characters, got ${[...characters].join(', ')}`);
+  // no single character should dominate the whole collection
+  const counts = {};
+  for (const p of pieces) { const c = p.plaque.match(/· ([a-z-]+ session) ·/)[1]; counts[c] = (counts[c] || 0) + 1; }
+  const max = Math.max(...Object.values(counts));
+  assert.ok(max < pieces.length * 0.5, `one character dominates: ${JSON.stringify(counts)}`);
+});
+
+test('buildCollection yields requested count of valid records', () => {
+  const { pieces } = buildCollection({ count: 140, driverText: 'random', seed: 99 });
+  assert.equal(pieces.length, 140);
+  for (const p of pieces) {
+    assert.ok(STYLE_NAMES.includes(p.style));
+    assert.ok(PALETTE_NAMES.includes(p.palette));
+    assert.ok(typeof p.title === 'string' && p.title.length);
+    assert.ok(typeof p.plaque === 'string' && p.plaque.length);
+    assert.ok(Number.isInteger(p.id));
+  }
+  assert.equal(new Set(pieces.map(p => p.id)).size, 140, 'ids unique');
+});
+
+test('buildCollection is deterministic for same seed', () => {
+  const a = buildCollection({ count: 10, driverText: 'random', seed: 5 });
+  const b = buildCollection({ count: 10, driverText: 'random', seed: 5 });
+  assert.deepEqual(a.pieces, b.pieces);
+});
