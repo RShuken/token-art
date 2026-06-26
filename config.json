@@ -1,0 +1,13 @@
+{
+  "mode": "jittered",
+  "thresholdTokens": 15000,
+  "jitterPct": 0.4,
+  "emitProbability": 0.85,
+  "maxPerSession": 10,
+  "events": {
+    "sessionStart": false,
+    "sessionEnd": true,
+    "burst": true,
+    "burstTokens": 25000
+  }
+}

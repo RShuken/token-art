@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeTranscript } from './hook.js';
+import { analyzeTranscript, loadUsage, loadConfig } from './hook.js';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const lines = [
   { type: 'user', message: { role: 'user', content: 'Help me build a parser! How?' } },
@@ -22,4 +25,28 @@ test('analyzeTranscript counts prompts, code blocks, questions, exclamations', (
   assert.ok(s.questions >= 1);         // "How?"
   assert.ok(s.exclamations >= 1);      // "parser!"
   assert.ok(s.avgMsgLen > 0);
+});
+
+test('loadUsage returns empty sessions for missing or old-format files', () => {
+  const d = mkdtempSync(join(tmpdir(), 'ta-usage-'));
+  assert.deepEqual(loadUsage(d), { sessions: {} });
+  writeFileSync(join(d, 'usage.json'), JSON.stringify({ emitted: 6, lastTokens: 90000 }));
+  assert.deepEqual(loadUsage(d), { sessions: {} });               // old format ignored
+  writeFileSync(join(d, 'usage.json'), JSON.stringify({ sessions: { a: { tokens: 1 } } }));
+  assert.deepEqual(loadUsage(d).sessions.a, { tokens: 1 });
+});
+
+test('loadConfig returns defaults when config.json is absent', () => {
+  const d = mkdtempSync(join(tmpdir(), 'ta-cfg-'));
+  const c = loadConfig(d);
+  assert.equal(c.thresholdTokens, 15000);
+  assert.equal(c.mode, 'jittered');
+});
+
+test('loadConfig applies TOKEN_ART_THRESHOLD override', () => {
+  const d = mkdtempSync(join(tmpdir(), 'ta-cfg2-'));
+  const prev = process.env.TOKEN_ART_THRESHOLD;
+  process.env.TOKEN_ART_THRESHOLD = '5000';
+  try { assert.equal(loadConfig(d).thresholdTokens, 5000); }
+  finally { if (prev === undefined) delete process.env.TOKEN_ART_THRESHOLD; else process.env.TOKEN_ART_THRESHOLD = prev; }
 });

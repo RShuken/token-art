@@ -3,10 +3,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addPending } from '../engine/state.js';
 import { APP_ROOT, STATE_DIR } from '../engine/paths.js';
+import { mergeConfig, decideEmissions } from '../engine/cadence.js';
+import { mulberry32, hashToSeed } from '../engine/rng.js';
 
 const ROOT = APP_ROOT;
 const STATE = STATE_DIR;
-const THRESHOLD = Number(process.env.TOKEN_ART_THRESHOLD || 15000);
 
 function textOf(content) {
   if (typeof content === 'string') return content;
@@ -35,20 +36,49 @@ function readTranscript(path) {
   return readFileSync(path, 'utf8').split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
 }
 
+export function loadConfig(appRoot) {
+  let raw = null;
+  const p = join(appRoot, 'config.json');
+  if (existsSync(p)) { try { raw = JSON.parse(readFileSync(p, 'utf8')); } catch { raw = null; } }
+  const config = mergeConfig(raw);
+  const envT = process.env.TOKEN_ART_THRESHOLD;
+  if (envT && Number(envT) > 0) config.thresholdTokens = Number(envT);
+  return config;
+}
+
+export function loadUsage(dir) {
+  const p = join(dir, 'usage.json');
+  if (!existsSync(p)) return { sessions: {} };
+  try {
+    const u = JSON.parse(readFileSync(p, 'utf8'));
+    if (u && typeof u === 'object' && u.sessions && typeof u.sessions === 'object') return u;
+  } catch {}
+  return { sessions: {} };
+}
+
 async function main() {
   let raw = ''; for await (const c of process.stdin) raw += c;
   let hook = {}; try { hook = JSON.parse(raw); } catch {}
+  const event = hook.hook_event_name || 'Stop';
+  const sid = hook.session_id || 'default';
   const stats = analyzeTranscript(readTranscript(hook.transcript_path));
+  stats.now = new Date().toISOString();
+
+  const config = loadConfig(ROOT);
   mkdirSync(STATE, { recursive: true });
-  const usagePath = join(STATE, 'usage.json');
-  const prev = existsSync(usagePath) ? JSON.parse(readFileSync(usagePath, 'utf8')) : { emitted: 0 };
-  const milestones = Math.floor(stats.tokens / THRESHOLD);
-  if (milestones > prev.emitted) {
+  const usage = loadUsage(STATE);
+  const rng = mulberry32(hashToSeed(sid + ':' + stats.tokens + ':' + event));
+  const { emissions, nextSession } = decideEmissions(usage.sessions[sid], stats, event, config, rng);
+
+  if (emissions.length) {
     const driver = existsSync(join(ROOT, 'driver.md')) ? readFileSync(join(ROOT, 'driver.md'), 'utf8') : 'random';
-    addPending(STATE, stats, driver);
+    for (const e of emissions) addPending(STATE, stats, driver, { trigger: e.trigger, sessionId: sid });
   }
-  writeFileSync(usagePath, JSON.stringify({ emitted: Math.max(milestones, prev.emitted), lastTokens: stats.tokens }));
+  usage.sessions[sid] = nextSession;
+  writeFileSync(join(STATE, 'usage.json'), JSON.stringify(usage, null, 2));
   process.exit(0);
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch(() => process.exit(0));
+}
