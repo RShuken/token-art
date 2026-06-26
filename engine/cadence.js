@@ -4,6 +4,7 @@ export const DEFAULT_CONFIG = {
   jitterPct: 0.4,
   emitProbability: 0.85,
   maxPerSession: 10,
+  galleryTarget: 50,
   events: { sessionStart: false, sessionEnd: true, burst: true, burstTokens: 25000 }
 };
 
@@ -16,6 +17,7 @@ export function mergeConfig(raw) {
     jitterPct: r.jitterPct ?? DEFAULT_CONFIG.jitterPct,
     emitProbability: r.emitProbability ?? DEFAULT_CONFIG.emitProbability,
     maxPerSession: r.maxPerSession ?? DEFAULT_CONFIG.maxPerSession,
+    galleryTarget: r.galleryTarget ?? DEFAULT_CONFIG.galleryTarget,
     events: {
       sessionStart: e.sessionStart ?? DEFAULT_CONFIG.events.sessionStart,
       sessionEnd: e.sessionEnd ?? DEFAULT_CONFIG.events.sessionEnd,

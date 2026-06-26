@@ -4,6 +4,7 @@
   "jitterPct": 0.4,
   "emitProbability": 0.85,
   "maxPerSession": 10,
+  "galleryTarget": 50,
   "events": {
     "sessionStart": false,
     "sessionEnd": true,

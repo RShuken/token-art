@@ -142,3 +142,12 @@ test('does not mutate prevSession', () => {
   decideEmissions(r1.nextSession, { tokens: 9000, now: NOW }, 'Stop', c, always(0));
   assert.equal(JSON.stringify(r1.nextSession), snapshot);
 });
+
+test('DEFAULT_CONFIG has galleryTarget 50', () => {
+  assert.equal(DEFAULT_CONFIG.galleryTarget, 50);
+});
+
+test('mergeConfig overlays galleryTarget and defaults it', () => {
+  assert.equal(mergeConfig({}).galleryTarget, 50);
+  assert.equal(mergeConfig({ galleryTarget: 25 }).galleryTarget, 25);
+});
