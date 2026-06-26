@@ -23,8 +23,16 @@ function renderAll(data) {
   const m = document.getElementById('masonry');
   m.innerHTML = '';
   for (const p of data.pieces) m.appendChild(card(p));
+  const target = data.target || 150;
   const c = document.getElementById('counter');
-  if (c) c.textContent = `${data.pieces.length} / ${data.target || 150} pieces`;
+  if (c) c.textContent = `${data.pieces.length} / ${target} pieces`;
+  const banner = document.getElementById('banner');
+  if (banner) {
+    const ready = data.pieces.length >= target;
+    banner.classList.toggle('show', ready);
+    const bc = document.getElementById('bannerCount');
+    if (bc) bc.textContent = String(data.pieces.length);
+  }
 }
 
 function openLightbox(piece) {
