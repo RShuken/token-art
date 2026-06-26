@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadGallery, saveGallery, addPending, listPending, selectCandidate } from './state.js';
+import { loadGallery, saveGallery, addPending, listPending, selectCandidate, addPiece } from './state.js';
 
 function freshDir() {
   const d = mkdtempSync(join(tmpdir(), 'tokenart-'));
@@ -51,4 +51,24 @@ test('addPending without meta still works and omits trigger', () => {
   assert.equal(entry.trigger, undefined);
   const piece = selectCandidate(d, entry.pendingId, 0);
   assert.equal(piece.trigger, undefined);
+});
+
+test('addPiece appends one piece with id/title/plaque and carries trigger', () => {
+  const d = freshDir();
+  const before = loadGallery(d).pieces.length;
+  const piece = addPiece(d, stats, 'random', { salt: 5, trigger: 'session-end', target: 50 });
+  assert.equal(loadGallery(d).pieces.length, before + 1);
+  assert.ok(piece.id > 0);
+  assert.ok(typeof piece.title === 'string' && piece.title.length);
+  assert.ok(typeof piece.plaque === 'string' && piece.plaque.length);
+  assert.equal(piece.trigger, 'session-end');
+  assert.equal(loadGallery(d).target, 50);
+});
+
+test('addPiece with different salts yields different pieces', () => {
+  const d = freshDir();
+  const a = addPiece(d, stats, 'random', { salt: 1 });
+  const b = addPiece(d, stats, 'random', { salt: 2 });
+  assert.notEqual(a.seed, b.seed);
+  assert.equal(loadGallery(d).pieces.length, 3);
 });
