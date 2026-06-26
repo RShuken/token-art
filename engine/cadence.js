@@ -35,3 +35,46 @@ export function nextInterval(config, rng) {
   const factor = 1 + (rng() * 2 - 1) * config.jitterPct;
   return Math.max(1, Math.round(base * factor));
 }
+
+export function decideEmissions(prevSession, stats, event, config, rng) {
+  const s = prevSession
+    ? { ...prevSession, events: undefined }   // shallow clone, drop stray keys
+    : initSession(stats.now);
+  // normalize clone (initSession already clean; clone again to avoid mutation)
+  const session = {
+    tokens: s.tokens, count: s.count, nextThreshold: s.nextThreshold,
+    lastTokens: s.lastTokens, startedAt: s.startedAt, started: s.started, ended: s.ended
+  };
+  const emissions = [];
+  const cap = config.maxPerSession;
+  const canEmit = () => session.count < cap;
+
+  if (event === 'SessionStart') {
+    if (config.events.sessionStart && !session.started && canEmit()) {
+      emissions.push({ trigger: 'session-start' }); session.count++;
+    }
+    session.started = true;
+    return { emissions, nextSession: session };
+  }
+
+  if (event === 'SessionEnd') {
+    if (config.events.sessionEnd && !session.ended && canEmit()) {
+      emissions.push({ trigger: 'session-end' }); session.count++;
+    }
+    session.ended = true;
+    return { emissions, nextSession: session };
+  }
+
+  // event === 'Stop'
+  session.tokens = stats.tokens;
+  if (session.nextThreshold <= 0) session.nextThreshold = nextInterval(config, rng);
+  while (session.tokens >= session.nextThreshold && canEmit()) {
+    if (rng() < config.emitProbability) { emissions.push({ trigger: 'interval' }); session.count++; }
+    session.nextThreshold += nextInterval(config, rng);
+  }
+  if (config.events.burst && canEmit() && (session.tokens - session.lastTokens) >= config.events.burstTokens) {
+    emissions.push({ trigger: 'burst' }); session.count++;
+  }
+  session.lastTokens = session.tokens;
+  return { emissions, nextSession: session };
+}

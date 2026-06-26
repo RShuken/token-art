@@ -53,3 +53,93 @@ test('nextInterval jittered stays within bounds and is a positive integer', () =
     assert.ok(v >= 1);
   }
 });
+
+import { decideEmissions } from './cadence.js';
+
+const NOW = '2026-01-01T00:00:00Z';
+// rng stubs: deterministic generators
+const always = (v) => () => v;            // constant rng
+const seq = (arr) => { let i = 0; return () => arr[i++ % arr.length]; };
+
+test('fixed mode emits once per threshold crossing (prob=1)', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 15000, emitProbability: 1, events: { burst: false, sessionEnd: false } });
+  let s; let total = 0;
+  // simulate Stop events at growing token totals
+  for (const tokens of [10000, 16000, 31000, 46000]) {
+    const r = decideEmissions(s, { tokens, now: NOW }, 'Stop', c, always(0)); // rng 0 < 1 => emit
+    s = r.nextSession; total += r.emissions.length;
+  }
+  // crossings at 15k,30k,45k => 3 interval emits
+  assert.equal(total, 3);
+  assert.ok(s.count === 3);
+});
+
+test('emitProbability gates interval emission but still advances threshold', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 15000, emitProbability: 0.85, events: { burst: false, sessionEnd: false } });
+  // rng always 0.99 => 0.99 < 0.85 false => never emits
+  let s; let total = 0;
+  for (const tokens of [16000, 31000, 46000]) {
+    const r = decideEmissions(s, { tokens, now: NOW }, 'Stop', c, always(0.99));
+    s = r.nextSession; total += r.emissions.length;
+  }
+  assert.equal(total, 0);
+  // threshold advanced past 46000 so it didn't re-emit forever
+  assert.ok(s.nextThreshold > 46000);
+});
+
+test('maxPerSession caps total emissions', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 1000, emitProbability: 1, maxPerSession: 3, events: { burst: false, sessionEnd: false } });
+  const r = decideEmissions(undefined, { tokens: 100000, now: NOW }, 'Stop', c, always(0));
+  assert.equal(r.emissions.length, 3);
+  assert.equal(r.nextSession.count, 3);
+});
+
+test('burst emits when single-turn delta >= burstTokens', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 1e9, emitProbability: 1, events: { burst: true, burstTokens: 25000, sessionEnd: false } });
+  // first Stop sets lastTokens=10000 (no burst from 0? delta 10000 < 25000)
+  let r = decideEmissions(undefined, { tokens: 10000, now: NOW }, 'Stop', c, always(0));
+  assert.equal(r.emissions.filter(e => e.trigger === 'burst').length, 0);
+  // next Stop jumps +30000 => burst
+  r = decideEmissions(r.nextSession, { tokens: 40000, now: NOW }, 'Stop', c, always(0));
+  assert.equal(r.emissions.filter(e => e.trigger === 'burst').length, 1);
+});
+
+test('session-start emits at most once and only when enabled', () => {
+  const on = mergeConfig({ events: { sessionStart: true } });
+  let r = decideEmissions(undefined, { tokens: 0, now: NOW }, 'SessionStart', on, always(0));
+  assert.equal(r.emissions.length, 1);
+  assert.equal(r.emissions[0].trigger, 'session-start');
+  // second SessionStart on same session => no emit
+  r = decideEmissions(r.nextSession, { tokens: 0, now: NOW }, 'SessionStart', on, always(0));
+  assert.equal(r.emissions.length, 0);
+  // disabled => no emit
+  const off = mergeConfig({ events: { sessionStart: false } });
+  const r2 = decideEmissions(undefined, { tokens: 0, now: NOW }, 'SessionStart', off, always(0));
+  assert.equal(r2.emissions.length, 0);
+});
+
+test('session-end emits once when enabled', () => {
+  const c = mergeConfig({ events: { sessionEnd: true } });
+  let r = decideEmissions(undefined, { tokens: 5000, now: NOW }, 'SessionEnd', c, always(0));
+  assert.equal(r.emissions.length, 1);
+  assert.equal(r.emissions[0].trigger, 'session-end');
+  r = decideEmissions(r.nextSession, { tokens: 5000, now: NOW }, 'SessionEnd', c, always(0));
+  assert.equal(r.emissions.length, 0);
+});
+
+test('per-session isolation: two ids tracked independently by the caller', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 15000, emitProbability: 1, events: { burst: false, sessionEnd: false } });
+  let a, b;
+  const ra = decideEmissions(a, { tokens: 16000, now: NOW }, 'Stop', c, always(0)); a = ra.nextSession;
+  const rb = decideEmissions(b, { tokens: 1000, now: NOW }, 'Stop', c, always(0)); b = rb.nextSession;
+  assert.equal(a.count, 1);
+  assert.equal(b.count, 0);
+});
+
+test('does not mutate prevSession', () => {
+  const c = mergeConfig({ mode: 'fixed', thresholdTokens: 1000, emitProbability: 1, events: { burst: false, sessionEnd: false } });
+  const r1 = decideEmissions(undefined, { tokens: 5000, now: NOW }, 'Stop', c, always(0));
+  const snapshot = JSON.stringify(r1.nextSession);
+  decideEmissions(r1.nextSession, { tokens: 9000, now: NOW }, 'Stop', c, always(0));
+  assert.equal(JSON.stringify(r1.nextSession), snapshot);
+});
