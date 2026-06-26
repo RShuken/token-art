@@ -1,7 +1,8 @@
 import { createServer } from 'node:http';
 import { readFile, readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join, extname, normalize, sep } from 'node:path';
-import { addPending, listPending, selectCandidate, loadGallery } from './engine/state.js';
+import { addPiece, loadGallery } from './engine/state.js';
+import { loadConfig } from './watch/hook.js';
 import { simulateSession } from './engine/simulate.js';
 import { mulberry32 } from './engine/rng.js';
 import { APP_ROOT, STATE_DIR } from './engine/paths.js';
@@ -25,7 +26,6 @@ const server = createServer(async (req, res) => {
   const p = url.pathname;
   try {
     if (p === '/api/gallery') return send(res, 200, loadGallery(STATE));
-    if (p === '/api/pending') return send(res, 200, listPending(STATE));
     if (p === '/api/usage') {
       const up = join(STATE, 'usage.json');
       let u = { sessions: {} };
@@ -39,9 +39,10 @@ const server = createServer(async (req, res) => {
       const body = await readBody(req);
       if (p === '/api/simulate') {
         const stats = simulateSession(mulberry32((Date.now() & 0xffffffff) >>> 0));
-        return send(res, 200, addPending(STATE, stats, driverText()));
+        const target = loadConfig(ROOT).galleryTarget;
+        const salt = (Date.now() & 0xffffffff) >>> 0;
+        return send(res, 200, addPiece(STATE, stats, driverText(), { trigger: 'interval', salt, target }));
       }
-      if (p === '/api/select') return send(res, 200, selectCandidate(STATE, body.pendingId, body.idx));
       if (p === '/api/driver') { writeFileSync(join(ROOT, 'driver.md'), body.text || 'random'); return send(res, 200, { ok: true }); }
       if (p === '/api/post') {
         const { exportSite, deploySite } = await import('./scripts/publish.js');
