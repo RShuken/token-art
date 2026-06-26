@@ -57,14 +57,17 @@ its own usage, independently.
 | `jitterPct` | `0.4` | jittered interval is `threshold ± 40%` |
 | `emitProbability` | `0.85` | chance a crossing actually emits (else it passes silently) |
 | `maxPerSession` | `10` | cap on pieces per session |
+| `galleryTarget` | `50` | gallery is "ready" (terminal alert) at this many pieces |
 | `events.sessionStart` | `false` | emit a piece when a session begins |
 | `events.sessionEnd` | `true` | emit a piece when a session ends |
 | `events.burst` | `true` | emit on a big single-turn token burst |
 | `events.burstTokens` | `25000` | tokens in one turn that count as a burst |
 
+Each cadence emission **auto-adds one random piece** (no picker). When the personal
+gallery first reaches `galleryTarget` pieces, the hook prints a one-time terminal
+message: *"🎨 Your Token Art gallery is ready — N pieces. Run /token-art to view it."*
 Each piece records its **trigger** (`interval` / `burst` / `session-start` / `session-end`),
-shown in the gallery alert. The top of the gallery shows a per-session strip (tokens +
-pieces) so you can see what each session produced.
+and the gallery shows a per-session strip plus a "ready" banner at the target.
 
 ## Publish
 

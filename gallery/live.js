@@ -1,5 +1,3 @@
-import { renderPiece } from '../engine/render.js';
-
 const $ = (id) => document.getElementById(id);
 let firstIncomingId = null;
 
