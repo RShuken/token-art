@@ -24,12 +24,14 @@ function savePending(dir, list) {
 }
 export function listPending(dir) { return loadPending(dir); }
 
-export function addPending(dir, stats, driverText) {
+export function addPending(dir, stats, driverText, meta = {}) {
   const driver = parseDriver(driverText || 'random');
   const candidates = makeCandidates(stats, driver, 5);
   const list = loadPending(dir);
   const pendingId = `p${stats.tokens}_${list.length}_${Math.floor(stats.prompts)}`;
   const entry = { pendingId, candidates };
+  if (meta && meta.trigger) entry.trigger = meta.trigger;
+  if (meta && meta.sessionId) entry.sessionId = meta.sessionId;
   list.push(entry); savePending(dir, list);
   return entry;
 }
@@ -43,6 +45,7 @@ export function selectCandidate(dir, pendingId, idx) {
   const gallery = loadGallery(dir);
   const id = (gallery.pieces.reduce((m, p) => Math.max(m, p.id || 0), 0)) + 1;
   const piece = { id, ...chosen };
+  if (entry.trigger) piece.trigger = entry.trigger;
   piece.title = makeTitle(piece, id);
   piece.plaque = makePlaque(piece);
   gallery.pieces.push(piece); saveGallery(dir, gallery);
