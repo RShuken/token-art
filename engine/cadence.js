@@ -24,3 +24,14 @@ export function mergeConfig(raw) {
     }
   };
 }
+
+export function initSession(startedAt) {
+  return { tokens: 0, count: 0, nextThreshold: 0, lastTokens: 0, startedAt, started: false, ended: false };
+}
+
+export function nextInterval(config, rng) {
+  const base = config.thresholdTokens;
+  if (config.mode === 'fixed') return Math.max(1, Math.round(base));
+  const factor = 1 + (rng() * 2 - 1) * config.jitterPct;
+  return Math.max(1, Math.round(base * factor));
+}
