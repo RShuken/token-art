@@ -44,6 +44,28 @@ node server.js                 # live demo at http://localhost:4800
 The hook tallies real token usage from the session transcript; every
 `TOKEN_ART_THRESHOLD` (default 15k) tokens it queues a new "piece ready" event.
 
+## Cadence (config.json)
+
+How token usage becomes "paintings ready" is configured per project in `config.json`
+(next to `driver.md`). It is **per-session** — each Claude Code session generates from
+its own usage, independently.
+
+| key | default | meaning |
+|-----|---------|---------|
+| `mode` | `"jittered"` | `"fixed"` (every N tokens) or `"jittered"` (N ± jitter) |
+| `thresholdTokens` | `15000` | base tokens between pieces (env `TOKEN_ART_THRESHOLD` overrides) |
+| `jitterPct` | `0.4` | jittered interval is `threshold ± 40%` |
+| `emitProbability` | `0.85` | chance a crossing actually emits (else it passes silently) |
+| `maxPerSession` | `10` | cap on pieces per session |
+| `events.sessionStart` | `false` | emit a piece when a session begins |
+| `events.sessionEnd` | `true` | emit a piece when a session ends |
+| `events.burst` | `true` | emit on a big single-turn token burst |
+| `events.burstTokens` | `25000` | tokens in one turn that count as a burst |
+
+Each piece records its **trigger** (`interval` / `burst` / `session-start` / `session-end`),
+shown in the gallery alert. The top of the gallery shows a per-session strip (tokens +
+pieces) so you can see what each session produced.
+
 ## Publish
 
 `node scripts/deploy.js 140` builds, exports, and deploys the collection to
