@@ -3,6 +3,18 @@ import { renderPiece } from '../engine/render.js';
 const $ = (id) => document.getElementById(id);
 let firstIncomingId = null;
 
+async function refreshSessions() {
+  try {
+    const u = await api('/api/usage');
+    const el = $('sessions'); if (!el) return;
+    const rows = Object.entries(u.sessions || {});
+    el.innerHTML = rows.map(([id, s]) => {
+      const tokens = (s.tokens || 0).toLocaleString();
+      return `<div class="sess"><b>${id.slice(0, 8)}</b> · ${tokens} tokens · <b>${s.count || 0}</b> pieces</div>`;
+    }).join('');
+  } catch {}
+}
+
 async function api(path, opts) { const r = await fetch(path, opts); return r.json(); }
 async function post(path, body) { return api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }); }
 
@@ -21,10 +33,12 @@ async function poll() {
   const pending = await api('/api/pending');
   if (pending.length) { currentPending = pending[0]; showAlert(currentPending); }
   else { $('alert').classList.remove('show'); }
+  refreshSessions();
 }
 
 function showAlert(entry) {
-  $('alertSub').textContent = `${entry.candidates.length} options · session of ${entry.candidates[0].stats.tokens.toLocaleString()} tokens`;
+  const trig = entry.trigger ? entry.trigger.replace('-', ' ') + ' · ' : '';
+  $('alertSub').textContent = `${trig}${entry.candidates.length} options · session of ${entry.candidates[0].stats.tokens.toLocaleString()} tokens`;
   $('alert').classList.add('show');
 }
 

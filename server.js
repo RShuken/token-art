@@ -26,6 +26,12 @@ const server = createServer(async (req, res) => {
   try {
     if (p === '/api/gallery') return send(res, 200, loadGallery(STATE));
     if (p === '/api/pending') return send(res, 200, listPending(STATE));
+    if (p === '/api/usage') {
+      const up = join(STATE, 'usage.json');
+      let u = { sessions: {} };
+      if (existsSync(up)) { try { u = JSON.parse(readFileSync(up, 'utf8')); } catch {} }
+      return send(res, 200, u);
+    }
     if (p === '/api/driver' && req.method === 'GET') return send(res, 200, { text: driverText() });
     if (p === '/gallery.json') return send(res, 200, loadGallery(STATE));
 
