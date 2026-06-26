@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { addPending } from '../engine/state.js';
+import { addPiece, loadGallery } from '../engine/state.js';
 import { APP_ROOT, STATE_DIR } from '../engine/paths.js';
 import { mergeConfig, decideEmissions } from '../engine/cadence.js';
 import { mulberry32, hashToSeed } from '../engine/rng.js';
@@ -56,6 +56,16 @@ export function loadUsage(dir) {
   return { sessions: {} };
 }
 
+export function checkGalleryReady(dir, config, usage) {
+  const next = { ...usage };
+  const count = loadGallery(dir).pieces.length;
+  if (count >= config.galleryTarget && !usage.galleryAnnounced) {
+    next.galleryAnnounced = true;
+    return { announce: `🎨 Your Token Art gallery is ready — ${count} pieces. Run /token-art to view it.`, usage: next };
+  }
+  return { announce: null, usage: next };
+}
+
 async function main() {
   let raw = ''; for await (const c of process.stdin) raw += c;
   let hook = {}; try { hook = JSON.parse(raw); } catch {}
@@ -72,10 +82,15 @@ async function main() {
 
   if (emissions.length) {
     const driver = existsSync(join(ROOT, 'driver.md')) ? readFileSync(join(ROOT, 'driver.md'), 'utf8') : 'random';
-    for (const e of emissions) addPending(STATE, stats, driver, { trigger: e.trigger, sessionId: sid });
+    for (const e of emissions) {
+      addPiece(STATE, stats, driver, { trigger: e.trigger, salt: Math.floor(rng() * 1e9), target: config.galleryTarget });
+    }
   }
   usage.sessions[sid] = nextSession;
-  writeFileSync(join(STATE, 'usage.json'), JSON.stringify(usage, null, 2));
+  const ready = checkGalleryReady(STATE, config, usage);
+  const finalUsage = ready.usage;
+  writeFileSync(join(STATE, 'usage.json'), JSON.stringify(finalUsage, null, 2));
+  if (ready.announce) console.log(JSON.stringify({ systemMessage: ready.announce }));
   process.exit(0);
 }
 

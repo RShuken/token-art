@@ -50,3 +50,27 @@ test('loadConfig applies TOKEN_ART_THRESHOLD override', () => {
   try { assert.equal(loadConfig(d).thresholdTokens, 5000); }
   finally { if (prev === undefined) delete process.env.TOKEN_ART_THRESHOLD; else process.env.TOKEN_ART_THRESHOLD = prev; }
 });
+
+import { checkGalleryReady } from './hook.js';
+
+function galleryDir(count) {
+  const d = mkdtempSync(join(tmpdir(), 'ta-ready-'));
+  const pieces = Array.from({ length: count }, (_, i) => ({ id: i + 1 }));
+  writeFileSync(join(d, 'gallery.json'), JSON.stringify({ pieces, target: 50 }));
+  return d;
+}
+
+test('checkGalleryReady announces once at the target and not before', () => {
+  const cfg = { galleryTarget: 50 };
+  // below target → no announce
+  let r = checkGalleryReady(galleryDir(49), cfg, { sessions: {} });
+  assert.equal(r.announce, null);
+  // at/over target, not yet announced → announce + flag set
+  const d = galleryDir(50);
+  r = checkGalleryReady(d, cfg, { sessions: {} });
+  assert.match(r.announce, /ready/i);
+  assert.equal(r.usage.galleryAnnounced, true);
+  // already announced → no repeat
+  const r2 = checkGalleryReady(d, cfg, r.usage);
+  assert.equal(r2.announce, null);
+});
