@@ -59,7 +59,6 @@ import { decideEmissions } from './cadence.js';
 const NOW = '2026-01-01T00:00:00Z';
 // rng stubs: deterministic generators
 const always = (v) => () => v;            // constant rng
-const seq = (arr) => { let i = 0; return () => arr[i++ % arr.length]; };
 
 test('fixed mode emits once per threshold crossing (prob=1)', () => {
   const c = mergeConfig({ mode: 'fixed', thresholdTokens: 15000, emitProbability: 1, events: { burst: false, sessionEnd: false } });

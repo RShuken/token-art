@@ -37,10 +37,8 @@ export function nextInterval(config, rng) {
 }
 
 export function decideEmissions(prevSession, stats, event, config, rng) {
-  const s = prevSession
-    ? { ...prevSession, events: undefined }   // shallow clone, drop stray keys
-    : initSession(stats.now);
-  // normalize clone (initSession already clean; clone again to avoid mutation)
+  const s = prevSession || initSession(stats.now);
+  // copy only the known session fields into a fresh object so prevSession is never mutated
   const session = {
     tokens: s.tokens, count: s.count, nextThreshold: s.nextThreshold,
     lastTokens: s.lastTokens, startedAt: s.startedAt, started: s.started, ended: s.ended
